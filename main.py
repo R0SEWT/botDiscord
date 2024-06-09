@@ -7,9 +7,37 @@ Primero, necesitas obtener las credenciales de la API de Spotify y configurar un
 
 '''
 
+from decouple import config 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+
 # Configurar las credenciales de la API de Spotify
+
+client_id = config('ID_SPOTIFY') 
+client_secret = config('SECRET_SPOTIFY')
+
+client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+# Buscar la canción en Spotify
+
+song_name = "malamante"
+results = sp.search(q=song_name, limit=1)
+track = results['tracks']['items'][0]
+track_id = track['id']
+
+# Obtener URL 
+
+track_url = sp.track(track_id)
+
+print(track_url['uri'])
+print('https://open.spotify.com/intl-es/track/' + track_id) # cyberpunk nanana
+
+
+
+
+
+
 
 
