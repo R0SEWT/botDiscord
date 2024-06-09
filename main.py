@@ -55,5 +55,33 @@ os.system('spotdl ' + track_url) # !spotdl https://open.spotify.com/intl-es/trac
 # Reproducir el audio en Discord: discord.py
 # !pip install discord.py
 
+import discord
+from discord.ext import commands
+from discord import FFmpegPCMAudio
+
+TOKEN = config
+bot = commands.Bot(command_prefix='!')
+
+@bot.command()
+async def play(ctx):
+    voice_channel = ctx.author.voice.channel
+    vc = await voice_channel.connect()
+    vc.play(FFmpegPCMAudio('paseo-estopa.mp3'))
+    
+bot.run(TOKEN)
+
+# !python main.py
+
+# !pip install -U discord.py[voice]
+# !pip install -U youtube-dl
+
+# !pip install -U spotipy
+# !pip install -U python-dotenv
+
+# !pip install -U ffmpeg-python
+
+# !pip install -U discord.py[voice]
+
+
 
 
