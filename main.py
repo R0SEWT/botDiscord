@@ -58,9 +58,12 @@ os.system('spotdl ' + track_url) # !spotdl https://open.spotify.com/intl-es/trac
 import discord
 from discord.ext import commands
 from discord import FFmpegPCMAudio
+from discord import Intents 
+
 
 TOKEN = config
-bot = commands.Bot(command_prefix='!')
+intents = Intents.default()
+bot = commands.Bot(command_prefix='!play', intents=intents) # !play
 
 @bot.command()
 async def play(ctx):
