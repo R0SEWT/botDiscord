@@ -10,5 +10,6 @@ Sacamos el ClientID y SecretID
 Nos documentamos con SPotipy
 https://spotipy.readthedocs.io/en/2.24.0/ 
 
+Buscamos cancion y mandamos enlace para abririla en Spotify
 
-
+Descargamos en 
