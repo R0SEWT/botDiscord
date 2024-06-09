@@ -27,7 +27,7 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 # Buscar la canción en Spotify
 
-song_name = "paseo-estopa"
+song_name = "rara vez"
 results = sp.search(q=song_name, limit=1)
 track = results['tracks']['items'][0] # con esto se puede simular el comportamiento del FlaviBot
 track_id = track['id']
@@ -61,17 +61,41 @@ from discord import FFmpegPCMAudio
 from discord import Intents 
 
 
-TOKEN = config
 intents = Intents.default()
-bot = commands.Bot(command_prefix='!play', intents=intents) # !play
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+
+bot = commands.Bot(command_prefix='$go', intents=intents) # !play
+
+@bot.event
+async def on_ready():
+    print(f'We have logged in as {bot.user}')
 
 @bot.command()
 async def play(ctx):
-    voice_channel = ctx.author.voice.channel
-    vc = await voice_channel.connect()
-    vc.play(FFmpegPCMAudio('paseo-estopa.mp3'))
+    if ctx.author.voice is None:
+        await ctx.send("You are not connected to a voice channel")
+        return
     
-bot.run(TOKEN)
+    voice_channel = ctx.author.voice.channel
+    caller = ctx.author
+
+    print(f'{caller} me llamo en {voice_channel}')
+    try:
+        vc = await voice_channel.connect()
+    except:
+        vc = await voice_channel.move_to(voice_channel) # robate al bot
+
+    try:
+        vc.play(FFmpegPCMAudio('Taiu, Milo j - Rara Vez.mp3')) # !play
+    except:
+        await ctx.send("No me pude conectar al canal de voz, quiza estoy conectado a otro canal")
+        return
+
+
+bot.run(config('BOT_TOKEN'))
 
 # !python main.py
 
