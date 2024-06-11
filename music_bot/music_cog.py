@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from youtube_dl import YoutubeDL
+from youtube_dl import YoutubeDL # eliminar una linea en el paquete yt_dlp tras instalar
 
 
 class music_cog(commands.Cog):
@@ -12,14 +12,14 @@ class music_cog(commands.Cog):
         self.is_paused = False
 
         self.music_queue = []
-        self.YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}  # Investigar
+        self.YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}  # opciones para youtube-dl (no reproducir listas de reproducción)
         self.FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'} 
 
         self.vc = None # cliente de voz
 
 
     def search_yt(self, item):
-        with YoutubeDL(self.YDL_OPTIONS) as ydl: # withc -> ciere automatico
+        with YoutubeDL(self.YDL_OPTIONS) as ydl: #  with -> cierra el recurso automaticamente
             try: 
                 info = ydl.extract_info(f"ytsearch:{item}", download=False)['entries'][0] # solo extrae, no descargar
             except Exception:
@@ -32,7 +32,7 @@ class music_cog(commands.Cog):
             self.is_playing = True
             m_url = self.music_queue[0][0]['source'] 
             self.music_queue.pop(0)
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
+            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next()) # reproducir el audio
         else:
             self.is_playing = False
 
@@ -41,48 +41,60 @@ class music_cog(commands.Cog):
             self.is_playing = True
             m_url = self.music_queue[0][0]['source'] # url 
             if self.vc == None or not self.vc.is_connected(): # no entiendo como el bot no estaria conectado, pero bueno
-                self.vc = await self.music_queue[0][1].connect() # (espera que se conecte al vc) (m_q[0][1] -> vc del primer elemento de la cola
-                if self.vc == None:
+                try:
+                    self.vc = await self.music_queue[0][1].connect() # (espera que se conecte al vc) (m_q[0][1] -> vc del primer elemento de la cola
+                except Exception as e:
                     await  ctx.send("voice channel inconectable, meper?") # aqui usamos el canal de voz del 
+                    print(e)
                     return
+                await ctx.send(f"Reproduciendo: {self.music_queue[0][0]['title']}")
             else:
-                self.vc = await self.vc.move_to(self.music_queue[0][1]) # si ya está conectado, movemos al bot al canal de voz del primer elemento de la cola
-
-            print(self.music_queue)
-            self.music_queue.pop(0)
-            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next()) # reproducir el audio
+                if self.vc.is_playing():
+                    self.vc.stop()
+                self.vc = await self.vc.move_to(self.music_queue[0][1]) # que se mueva al canal de voz de la cola
+                await ctx.send(f"Reproduciendo: {self.music_queue[0][0]['title']}")
+           
+            self.music_queue.pop(0) 
+            self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next()) 
 
         else:
             self.is_playing = False
     
     @commands.command(name="play", aliases=["p"], help="Reproduce terrible cancion desde YT")
     async def play(self, ctx, *args): # *args -> argumentos variables, ctx -> contexto del comando
+        #await ctx.send("Buscando la cancion, un momento por favor")
         query = " ".join(args)
         voice_channel = ctx.author.voice.channel # vc del comandante
+        print(voice_channel)
 
         if voice_channel is None:
             await ctx.send("Mira mijo no puedo reproducirme en el eter, conectate a un canal")
         else:
             song = self.search_yt(query) # buscar la canción en YT
-            if type(song) == type(True):
+            if type(song) == type(True): # si la busqueda falla (no se encuentra la cancion) 
                 await ctx.send("O YT no tiene la cancion o no tengo internet, no se cual de las dos es peor")
                 await ctx.send("Si quieres que te diga la verdad, no tengo internet")
+                print("No se encontro la cancion")
             else:
                 await ctx.send(f"Encolando: {song['title']}")
                 self.music_queue.append([song, voice_channel])
+                print("Encolado")
                 if self.is_playing == False:
                     await self.play_music(ctx)
+                    print("Reproduciendo")
 
     @commands.command(name="pause", aliases=["s"], help="Pausa la musica")
     async def pause(self, ctx, *args):
         if self.vc.is_playing():
             self.is_playing = False
             self.is_paused = True
-            self.vc.pause() 
+            self.vc.pause()
             await ctx.send("Basta")
 
         elif self.is_paused:
             self.vc.resume()
+            self.is_paused = False
+            await ctx.send("Reanudando")
         else:
             await ctx.send("Que musica?")
 
@@ -100,7 +112,8 @@ class music_cog(commands.Cog):
     async def skip(self, ctx, *args):
         if self.vc != None and self.vc:
             self.vc.stop()
-            await self.play_music(ctx)
+            await self.self.play_music(ctx)
+            await ctx.send("Pasando la cancion")
 
     @commands.command(name='cola', aliases = ['q'], help = 'Te muestra la cola ;)')
     async def queue(self, ctx):
